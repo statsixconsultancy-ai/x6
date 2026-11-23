@@ -1,0 +1,77 @@
+/* Metrics board - figure-specific styling on top of react-isokit/styles.css.
+   The component sets --col and --slab on every slab, --i on every rolling
+   character, and --carry (ms between characters) on the plate. */
+
+.fig-metrics-board {
+  --mb-slab-step: 38ms;
+  --mb-col-step: 22ms;
+  --mb-roll: 280ms;
+}
+
+/* Engraved labels: size with CSS, not the fontSize attribute. */
+.fig-metrics-board .ik-label.key {
+  font-size: 6.4px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.fig-metrics-board .ik-label.range-label {
+  font-size: 4.6px;
+  letter-spacing: 0.22em;
+}
+
+/* ---------- the bar columns: one slab per level ---------- */
+.fig-metrics-board .slab {
+  transform-box: fill-box;
+  transition:
+    opacity var(--ik-t-state, 220ms) var(--ik-ease-out, ease-out),
+    transform var(--ik-t-move, 320ms) var(--ik-spring, cubic-bezier(0.2, 0.8, 0.2, 1));
+  transition-delay: calc(var(--slab, 0) * var(--mb-slab-step) + var(--col, 0) * var(--mb-col-step));
+}
+.fig-metrics-board .slab[data-on="false"] {
+  opacity: 0;
+  transform: translateY(-5px);
+  pointer-events: none;
+}
+.fig-metrics-board .slab[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- rolling headline digits ---------- */
+.fig-metrics-board .mb-roll-out,
+.fig-metrics-board .mb-roll-in {
+  transform-box: fill-box;
+  animation-duration: var(--mb-roll);
+  animation-timing-function: var(--ik-ease-out, cubic-bezier(0.2, 0.8, 0.2, 1));
+  animation-fill-mode: both;
+  animation-delay: calc(var(--i, 0) * var(--carry, 50ms));
+}
+.fig-metrics-board .mb-roll-out { animation-name: mb-roll-out; }
+.fig-metrics-board .mb-roll-in { animation-name: mb-roll-in; }
+@keyframes mb-roll-out {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-16px); opacity: 0; }
+}
+@keyframes mb-roll-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ---------- range keys ---------- */
+.fig-metrics-board .range .led {
+  fill: var(--ik-well, currentColor);
+  transition: fill var(--ik-t-state, 220ms) var(--ik-ease-out, ease-out);
+}
+.fig-metrics-board .range[data-on="true"] .led {
+  fill: var(--ik-live, #ff5a1f);
+}
+.fig-metrics-board .range[data-on="true"] .ik-label.key {
+  fill: var(--ik-ink-hi, currentColor);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fig-metrics-board .slab,
+  .fig-metrics-board .range .led { transition: none; }
+  .fig-metrics-board .mb-roll-out { animation: none; opacity: 0; }
+  .fig-metrics-board .mb-roll-in { animation: none; }
+}

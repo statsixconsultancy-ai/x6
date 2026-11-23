@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<style>body{margin:0;background:transparent}</style></head>
+<body>
+<script type="module">
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
+
+const SIZE = 640;
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(SIZE, SIZE);
+renderer.setClearColor(0x000000, 0);
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+function candy(hex, opts = {}) {
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(hex),
+    roughness: opts.roughness ?? 0.38,
+    metalness: 0,
+    clearcoat: 1,
+    clearcoatRoughness: 0.08,
+    envMapIntensity: opts.env ?? 0.5,
+  });
+}
+
+function scene(hex) {
+  const s = new THREE.Scene();
+  s.environment = envTex;
+  const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(-3, 4, 5); s.add(key);
+  const rim = new THREE.DirectionalLight(new THREE.Color(hex).lerp(new THREE.Color(0xffffff), 0.5), 1.4); rim.position.set(4, -2, -3); s.add(rim);
+  const fill = new THREE.HemisphereLight(0xffffff, new THREE.Color(hex).multiplyScalar(0.4), 0.5); s.add(fill);
+  return s;
+}
+const cam = () => { const c = new THREE.PerspectiveCamera(30, 1, 0.1, 100); c.position.set(0, 0, 9.2); c.lookAt(0, 0, 0); return c; };
+
+function extrude(shape, depth, bevel, segs = 14) {
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.92, bevelSegments: segs, curveSegments: 64 });
+  g.center();
+  const m = mergeVertices(g); m.computeVertexNormals();
+  return m;
+}
+
+
+/* Puff a 2D shape into a balloon: height grows with distance from the outline. */
+function inflate(shape, { res = 200, H = 0.5, D = 0.6, dome = 0.12, smooth = 0 } = {}) {
+  const poly = shape.getSpacedPoints(600);
+  const box = new THREE.Box2().setFromPoints(poly);
+  const pad = 0.05;
+  const minX = box.min.x - pad, minY = box.min.y - pad;
+  const w = box.max.x - box.min.x + 2 * pad, h = box.max.y - box.min.y + 2 * pad;
+  const step = Math.max(w, h) / res;
+  const nx = Math.ceil(w / step) + 1, ny = Math.ceil(h / step) + 1;
+  const inside = (x, y) => {
+    let c = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) c = !c;
+    }
+    return c;
+  };
+  const nearest = (x, y) => {
+    let best = Infinity, bx = 0, by = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+      const px = a.x + dx * t, py = a.y + dy * t;
+      const d = (x - px) ** 2 + (y - py) ** 2;
+      if (d < best) { best = d; bx = px; by = py; }
+    }
+    return [Math.sqrt(best), bx, by];
+  };
+  const sd = new Float32Array(nx * ny), PX = new Float32Array(nx * ny), PY = new Float32Array(nx * ny);
+  let maxD = 0;
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const x = minX + i * step, y = minY + j * step, k = j * nx + i;
+    const [d, bx, by] = nearest(x, y);
+    const ins = inside(x, y);
+    sd[k] = ins ? d : -d;
+    if (ins) { PX[k] = x; PY[k] = y; maxD = Math.max(maxD, d); } else { PX[k] = bx; PY[k] = by; }
+  }
+  const used = (k) => sd[k] > -step * 1.6;
+  const height = (k) => {
+    if (sd[k] <= 0) return 0;
+    const t = Math.min(sd[k] / D, 1);
+    return H * Math.sqrt(1 - (1 - t) * (1 - t)) + dome * H * (sd[k] / maxD);
+  };
+  // smooth the height field so distance-field ridges round off
+  let hf = new Float32Array(nx * ny);
+  for (let k = 0; k < nx * ny; k++) hf[k] = height(k);
+  for (let it = 0; it < smooth; it++) {
+    const nh = hf.slice();
+    for (let j = 1; j < ny - 1; j++) for (let i = 1; i < nx - 1; i++) {
+      const k = j * nx + i;
+      if (sd[k] <= step) continue;
+      nh[k] = (hf[k] * 4 + hf[k - 1] + hf[k + 1] + hf[k - nx] + hf[k + nx]) / 8;
+    }
+    hf = nh;
+  }
+  const pos = [], idxF = new Int32Array(nx * ny).fill(-1), idxB = new Int32Array(nx * ny).fill(-1);
+  for (let k = 0; k < nx * ny; k++) {
+    if (!used(k)) continue;
+    const z = hf[k];
+    idxF[k] = pos.length / 3; pos.push(PX[k], PY[k], z);
+    if (sd[k] > 0) { idxB[k] = pos.length / 3; pos.push(PX[k], PY[k], -z); } else idxB[k] = idxF[k];
+  }
+  const ind = [];
+  const tri = (a, b, c) => {
+    if (idxF[a] < 0 || idxF[b] < 0 || idxF[c] < 0) return;
+    if (sd[a] <= 0 && sd[b] <= 0 && sd[c] <= 0) return;
+    ind.push(idxF[a], idxF[b], idxF[c]);
+    ind.push(idxB[a], idxB[c], idxB[b]);
+  };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+    tri(a, b, d); tri(a, d, c);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(ind);
+  g.computeVertexNormals();
+  g.center();
+  return g;
+}
+
+/* ---------- 1. chat bubble (community) ---------- */
+function chat(hex) {
+  const g = new THREE.Group();
+  const w = 2.5, h = 1.9, r = 0.82;
+  const s = new THREE.Shape();
+  s.moveTo(-w / 2 + r, -h / 2);
+  s.lineTo(-w / 2 + 0.55, -h / 2);
+  s.quadraticCurveTo(-w / 2 + 0.2, -h / 2 - 0.55, -w / 2 - 0.12, -h / 2 - 0.62);
+  s.quadraticCurveTo(-w / 2 + 0.05, -h / 2 - 0.2, -w / 2 + 0.02, -h / 2 + 0.3);
+  s.quadraticCurveTo(-w / 2, -h / 2 + 0.2, -w / 2, -h / 2 + r);
+  s.lineTo(-w / 2, h / 2 - r);
+  s.quadraticCurveTo(-w / 2, h / 2, -w / 2 + r, h / 2);
+  s.lineTo(w / 2 - r, h / 2);
+  s.quadraticCurveTo(w / 2, h / 2, w / 2, h / 2 - r);
+  s.lineTo(w / 2, -h / 2 + r);
+  s.quadraticCurveTo(w / 2, -h / 2, w / 2 - r, -h / 2);
+  s.lineTo(-w / 2 + r, -h / 2);
+  const body = new THREE.Mesh(inflate(s, { H: 0.62, D: 0.75, dome: 0.1, smooth: 20 }), candy(hex));
+  g.add(body);
+  const dotMat = candy(new THREE.Color(hex).lerp(new THREE.Color(0xffffff), 0.18));
+  for (let i = -1; i <= 1; i++) {
+    const d = new THREE.Mesh(new THREE.SphereGeometry(0.21, 48, 32), dotMat);
+    d.scale.set(1, 1, 0.55);
+    d.position.set(i * 0.62 + 0.08, 0.22, 0.74);
+    g.add(d);
+  }
+  g.rotation.set(0.12, -0.42, 0.04);
+  g.scale.setScalar(1.08);
+  return g;
+}
+
+/* ---------- 2. sparkle with orbiting spheres (AI) ---------- */
+function sparkle(hex) {
+  const g = new THREE.Group();
+  const R = 1.5, c = 0.3;
+  const s = new THREE.Shape();
+  s.moveTo(0, R);
+  s.quadraticCurveTo(c, c, R, 0);
+  s.quadraticCurveTo(c, -c, 0, -R);
+  s.quadraticCurveTo(-c, -c, -R, 0);
+  s.quadraticCurveTo(-c, c, 0, R);
+  const star = new THREE.Mesh(inflate(s, { res: 340, H: 0.5, D: 0.6, dome: 0.2, smooth: 90 }), candy(hex));
+  g.add(star);
+  const sm = candy(hex);
+  const a = new THREE.Mesh(new THREE.SphereGeometry(0.3, 64, 48), sm); a.position.set(1.25, 1.2, 0.2); g.add(a);
+  const b = new THREE.Mesh(new THREE.SphereGeometry(0.2, 64, 48), sm); b.position.set(-1.3, -1.15, 0.35); g.add(b);
+  g.rotation.set(0.15, -0.38, 0.08);
+  return g;
+}
+
+/* ---------- 3. coin with cycling arrows (value) ---------- */
+function coin(hex) {
+  const g = new THREE.Group();
+  const mat = candy(hex);
+  const circ = new THREE.Shape(); circ.absarc(0, 0, 1.08, 0, Math.PI * 2, false);
+  const disc = new THREE.Mesh(inflate(circ, { res: 220, H: 0.3, D: 0.5, dome: 0.15, smooth: 20 }), mat); g.add(disc);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(1.06, 0.2, 48, 128), mat); g.add(rim);
+  // embossed hexagon mark
+  const hex6 = new THREE.Shape();
+  for (let i = 0; i < 6; i++) { const t = Math.PI / 2 + i * Math.PI / 3; const x = Math.cos(t) * 0.52, y = Math.sin(t) * 0.52; i ? hex6.lineTo(x, y) : hex6.moveTo(x, y); }
+  hex6.closePath();
+  const hole = new THREE.Path();
+  for (let i = 0; i < 6; i++) { const t = Math.PI / 2 + i * Math.PI / 3; const x = Math.cos(t) * 0.3, y = Math.sin(t) * 0.3; i ? hole.lineTo(x, y) : hole.moveTo(x, y); }
+  hole.closePath(); hex6.holes.push(hole);
+  const mark = new THREE.Mesh(extrude(hex6, 0.04, 0.07, 8), candy(new THREE.Color(hex).lerp(new THREE.Color(0xffffff), 0.12)));
+  mark.position.z = 0.33; g.add(mark);
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.13, 48, 32), mark.material); dot.scale.z = 0.6; dot.position.z = 0.36; g.add(dot);
+  // arrows
+  const am = candy(new THREE.Color(hex).lerp(new THREE.Color(0x0d0d0c), 0.06));
+  const arc = (a0, a1) => {
+    const pts = [];
+    for (let i = 0; i <= 40; i++) { const t = a0 + (a1 - a0) * (i / 40); pts.push(new THREE.Vector3(Math.cos(t) * 1.62, Math.sin(t) * 1.62, 0.1)); }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.13, 24, false), am));
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 24), am); cap.position.copy(pts[0]); g.add(cap);
+    const end = pts[pts.length - 1], dir = new THREE.Vector3(-Math.sin(a1), Math.cos(a1), 0);
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.46, 40), am);
+    head.position.copy(end).addScaledVector(dir, 0.12);
+    head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    g.add(head);
+  };
+  arc(0.35, 2.55); arc(0.35 + Math.PI, 2.55 + Math.PI);
+  g.rotation.set(0.18, -0.48, 0.05);
+  return g;
+}
+
+/* ---------- 4. globe of pillowy cells with meridian grooves (the web) ---------- */
+function globe(hex) {
+  const g = new THREE.Group();
+  const geo = new THREE.SphereGeometry(1.45, 512, 256);
+  const p = geo.attributes.position, v = new THREE.Vector3();
+  const LON = 12, LAT = 7;
+  const ss = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i).normalize();
+    const lat = Math.asin(v.y), lon = Math.atan2(v.z, v.x) + Math.PI;
+    const u = (lon / (Math.PI * 2)) * LON, w = ((lat + Math.PI / 2) / Math.PI) * LAT;
+    const fu = u - Math.floor(u), fw = w - Math.floor(w);
+    // distance to cell edge, widened toward the poles so cells stay rounded
+    const du = Math.min(fu, 1 - fu) * Math.max(0.25, Math.cos(lat));
+    const dw = Math.min(fw, 1 - fw);
+    const edge = Math.min(du * 1.6, dw);
+    const pillow = Math.sqrt(ss(0.0, 0.34, edge));
+    p.setXYZ(i, ...v.multiplyScalar(1.45 + 0.11 * pillow).toArray());
+  }
+  geo.computeVertexNormals();
+  g.add(new THREE.Mesh(geo, candy(hex)));
+  g.rotation.set(0.38, 0.5, -0.18);
+  return g;
+}
+
+const ICONS = { community: [chat, "#E9C22E"], ai: [sparkle, "#F2772F"], value: [coin, "#3FB874"], web: [globe, "#C564C4"] };
+window.renderIcon = (name) => {
+  const [fn, hex] = ICONS[name];
+  const s = scene(hex);
+  s.add(fn(hex));
+  renderer.render(s, cam());
+  return renderer.domElement.toDataURL("image/png");
+};
+
+/* ---------- metallic X6 coin ---------- */
+import { FontLoader } from "three/addons/loaders/FontLoader.js";
+import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+const font = await new Promise((res) => new FontLoader().load("./node_modules/three/examples/fonts/helvetiker_bold.typeface.json", res));
+function metalCoin(tilt) {
+  const g = new THREE.Group();
+  const metal = new THREE.MeshPhysicalMaterial({ color: 0xdfe3e8, metalness: 1, roughness: 0.2, clearcoat: 0.6, clearcoatRoughness: 0.1, envMapIntensity: 1.4 });
+  const dark = new THREE.MeshPhysicalMaterial({ color: 0xb9c0c9, metalness: 1, roughness: 0.42, envMapIntensity: 1.1 });
+  // body with reeded edge
+  const body = new THREE.CylinderGeometry(1.6, 1.6, 0.34, 480, 1, false);
+  const p = body.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    const r = Math.hypot(v.x, v.z);
+    if (r > 1.59) { const a = Math.atan2(v.z, v.x); const k = 1 + 0.008 * Math.sign(Math.sin(a * 140)); p.setXYZ(i, v.x * k, v.y, v.z * k); }
+  }
+  body.computeVertexNormals();
+  const disc = new THREE.Mesh(body, metal); disc.rotation.x = Math.PI / 2; g.add(disc);
+  for (const side of [1, -1]) {
+    const face = new THREE.Group();
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(1.46, 0.07, 32, 200), metal); rim.scale.z = 0.7; face.add(rim);
+    const inner = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.018, 16, 200), dark); face.add(inner);
+    for (let i = 0; i < 48; i++) { const a = (i / 48) * Math.PI * 2; const d = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 8), metal); d.position.set(Math.cos(a) * 1.33, Math.sin(a) * 1.33, 0); face.add(d); }
+    const hex = new THREE.Shape();
+    for (let i = 0; i < 6; i++) { const t = Math.PI / 2 + i * Math.PI / 3; const x = Math.cos(t) * 1.02, y = Math.sin(t) * 1.02; i ? hex.lineTo(x, y) : hex.moveTo(x, y); }
+    hex.closePath();
+    const hole = new THREE.Path();
+    for (let i = 0; i < 6; i++) { const t = Math.PI / 2 + i * Math.PI / 3; const x = Math.cos(t) * 0.9, y = Math.sin(t) * 0.9; i ? hole.lineTo(x, y) : hole.moveTo(x, y); }
+    hole.closePath(); hex.holes.push(hole);
+    const hx = new THREE.Mesh(extrude(hex, 0.02, 0.03, 6), metal); face.add(hx);
+    const tg = new TextGeometry("X6", { font, size: 0.78, depth: 0.06, curveSegments: 24, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.02, bevelSegments: 6 });
+    tg.center();
+    const txt = new THREE.Mesh(tg, metal); face.add(txt);
+    face.position.z = side * 0.18;
+    if (side < 0) face.rotation.y = Math.PI;
+    g.add(face);
+  }
+  g.rotation.set(tilt[0], tilt[1], tilt[2]);
+  return g;
+}
+window.renderCoin = (tilt, size = 900) => {
+  renderer.setSize(size, size);
+  const s = new THREE.Scene(); s.environment = envTex;
+  const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(-3, 4, 5); s.add(key);
+  const warm = new THREE.DirectionalLight(0xffd2b0, 1.6); warm.position.set(4, -1, 2); s.add(warm);
+  const cool = new THREE.DirectionalLight(0xbfd6ff, 1.0); cool.position.set(-4, -3, 1); s.add(cool);
+  s.add(metalCoin(tilt));
+  const c = new THREE.PerspectiveCamera(28, 1, 0.1, 100); c.position.set(0, 0, 9); c.lookAt(0, 0, 0);
+  renderer.render(s, c);
+  const d = renderer.domElement.toDataURL("image/png");
+  renderer.setSize(SIZE, SIZE);
+  return d;
+};
+
+window.ready = true;
+</script>
+</body></html>

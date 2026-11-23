@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (Kokonut UI components switch with a `.dark` ancestor). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-void: #07090d;
+  --color-midnight: #101827;
+  --color-cyan: #50dfff;
+  --color-cyan-ice: #a9dfff;
+  --color-silver: #c7ced8;
+  --color-ink: #f7f9fc;
+  --color-ink-muted: #858d9a;
+  --font-display: "Space Grotesk Variable", Sora, system-ui, sans-serif;
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+:root {
+  --bg: #07090d;
+  --bg-2: #101827;
+  --cyan: #50dfff;
+  --ice: #a9dfff;
+  --silver: #c7ced8;
+  --text: #f7f9fc;
+  --text-2: #858d9a;
+  --font-display: "Space Grotesk Variable", Sora, system-ui, sans-serif;
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bg);
+}
+body {
+  overflow-x: hidden;
+}
+::selection {
+  background: rgba(80, 223, 255, 0.3);
+  color: #fff;
+}
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Magnetic buttons: JS sets --mx/--my */
+.magnetic {
+  transform: translate3d(var(--mx, 0px), var(--my, 0px), 0);
+  transition: transform 0.35s var(--ease-out), background-color 0.3s, color 0.3s, border-color 0.3s,
+    box-shadow 0.3s;
+}

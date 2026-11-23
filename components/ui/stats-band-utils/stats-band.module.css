@@ -1,0 +1,310 @@
+/* Stats band. Tokens are scoped to the band (not :root) so they can't collide
+   with the host site's own variables; override any of them from a parent class. */
+.band {
+  --sb-bg: transparent;
+  --sb-fg: oklch(15% 0 0);
+  --sb-secondary: oklch(46% 0 0);
+  --sb-muted: oklch(59% 0 0);
+  --sb-border: oklch(93.5% 0 0);
+  --sb-border-strong: oklch(82% 0 0);
+  --sb-accent: oklch(33% 0 0);
+  --sb-faint: oklch(90% 0 0);
+  --sb-display: var(--font-geist, "Geist Variable"), "Inter Tight Variable", "Inter Variable", system-ui, sans-serif;
+  --sb-body: var(--font-inter, "Inter Variable"), system-ui, sans-serif;
+  --sb-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --sb-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+
+  background: var(--sb-bg);
+  color: var(--sb-fg);
+  font-family: var(--sb-body);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.inner {
+  width: 100%;
+}
+
+.header {
+  max-width: 40rem;
+  margin-bottom: 3rem;
+}
+.title {
+  margin: 0;
+  font-family: var(--sb-display);
+  font-weight: 500;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.description {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  color: var(--sb-secondary);
+}
+
+/* ---------- grid ---------- */
+.stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--count, 4), minmax(0, 1fr));
+  gap: 2.5rem;
+}
+.band[data-layout="divided"] .stats {
+  gap: 0;
+  border-top: 1px solid var(--sb-border);
+  border-bottom: 1px solid var(--sb-border);
+}
+.stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  outline: none;
+  border-radius: 0.5rem;
+}
+.band[data-layout="divided"] .stat {
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-radius: 0;
+}
+.band[data-layout="divided"] .stat + .stat {
+  border-left: 1px solid var(--sb-border);
+}
+.stat:focus-visible {
+  box-shadow: 0 0 0 2px var(--sb-border-strong);
+}
+
+.label {
+  order: 0;
+  font-size: 0.875rem;
+  color: var(--sb-secondary);
+}
+.figure {
+  order: 1;
+  margin: 0.5rem 0 0;
+}
+.caption {
+  order: 2;
+  position: relative;
+  margin: 0.5rem 0 0;
+  min-height: 1.3em;
+  font-size: 0.875rem;
+}
+.visual {
+  order: 3;
+  margin: 1.25rem 0 0;
+  height: 2.75rem;
+}
+
+/* ---------- number ---------- */
+.number {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--sb-display);
+  font-weight: 500;
+  font-size: clamp(2.25rem, 4vw, 3.25rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.prefix,
+.suffix {
+  font-size: 0.6em;
+  color: var(--sb-secondary);
+  letter-spacing: -0.01em;
+}
+.prefix { margin-right: 0.06em; }
+.suffix { margin-left: 0.05em; }
+/* The final value reserves the width; the live value counts over it. */
+.digits {
+  position: relative;
+  display: inline-block;
+}
+.sizer {
+  visibility: hidden;
+}
+.live {
+  position: absolute;
+  inset: 0 0 auto auto;
+  text-align: right;
+}
+
+/* ---------- caption: detail swaps for context on hover/focus ---------- */
+.detail,
+.context {
+  display: block;
+  transition:
+    opacity 240ms var(--sb-ease-standard),
+    transform 240ms var(--sb-ease-standard);
+}
+.detail {
+  color: var(--sb-muted);
+}
+.context {
+  position: absolute;
+  inset: 0 0 auto 0;
+  color: var(--sb-fg);
+  opacity: 0;
+  transform: translateY(4px);
+}
+.stat:not([data-context]) .context {
+  position: static;
+  opacity: 1;
+  transform: none;
+  color: var(--sb-muted);
+}
+.stat[data-context]:hover .detail,
+.stat[data-context]:focus-visible .detail {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.stat[data-context]:hover .context,
+.stat[data-context]:focus-visible .context {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- visuals: drawn at rest, hidden until in view ---------- */
+.trend,
+.bars,
+.map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.draw {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.area {
+  fill: var(--sb-faint);
+  opacity: 0;
+  transition: opacity 600ms var(--sb-ease-enter) calc(var(--draw) * 0.6 + var(--i, 0) * 90ms);
+}
+.line {
+  fill: none;
+  stroke: var(--sb-muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* Long enough to cover the line at any card width (non-scaling stroke works in screen px). */
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  transition:
+    stroke-dashoffset var(--draw) var(--sb-ease-enter) calc(var(--i, 0) * 90ms),
+    stroke 240ms var(--sb-ease-standard);
+}
+.endDot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--sb-muted);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 300ms var(--sb-ease-enter) calc(var(--draw) + var(--i, 0) * 90ms),
+    transform 300ms var(--sb-ease-enter) calc(var(--draw) + var(--i, 0) * 90ms),
+    background-color 240ms var(--sb-ease-standard);
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+.bars[data-dense] {
+  gap: 2px;
+}
+.bar {
+  flex: 1;
+  min-width: 0;
+  height: calc(var(--h, 1) * 100%);
+  border-radius: 1.5px;
+  background: var(--sb-faint);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition:
+    transform 520ms var(--sb-ease-enter) calc(var(--i, 0) * 90ms + var(--j, 0) * var(--draw) * 0.6),
+    background-color 240ms var(--sb-ease-standard);
+}
+.bar[data-ink] {
+  background: var(--sb-muted);
+}
+
+.map .draw {
+  height: 100%;
+}
+.land {
+  fill: var(--sb-border-strong);
+  opacity: 0;
+  transition: opacity 700ms var(--sb-ease-enter) calc(var(--i, 0) * 90ms);
+}
+.lit {
+  fill: var(--sb-muted);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.2);
+  transition:
+    opacity 400ms var(--sb-ease-enter) calc(var(--draw) * 0.7 + var(--i, 0) * 90ms),
+    transform 500ms var(--sb-ease-enter) calc(var(--draw) * 0.7 + var(--i, 0) * 90ms),
+    fill 240ms var(--sb-ease-standard);
+}
+
+/* In view: draw everything in. */
+.band[data-in-view] .line { stroke-dashoffset: 0; }
+.band[data-in-view] .area { opacity: 1; }
+.band[data-in-view] .endDot { opacity: 1; transform: none; }
+.band[data-in-view] .bar { transform: none; }
+.band[data-in-view] .land { opacity: 1; }
+.band[data-in-view] .lit { opacity: 1; transform: none; }
+
+/* Hover/focus gives the visual the accent. */
+.stat:hover .line,
+.stat:focus-visible .line { stroke: var(--sb-accent); }
+.stat:hover .endDot,
+.stat:focus-visible .endDot,
+.stat:hover .bar[data-ink],
+.stat:focus-visible .bar[data-ink] { background: var(--sb-accent); }
+.stat:hover .lit,
+.stat:focus-visible .lit { fill: var(--sb-accent); }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 2rem;
+  }
+  .band[data-layout="divided"] .stat + .stat { border-left: 0; }
+  .band[data-layout="divided"] .stat:nth-child(even) { border-left: 1px solid var(--sb-border); }
+  .band[data-layout="divided"] .stat:nth-child(n + 3) { border-top: 1px solid var(--sb-border); }
+}
+@media (max-width: 520px) {
+  .stats { grid-template-columns: 1fr; }
+  .band[data-layout="divided"] .stat:nth-child(even) { border-left: 0; }
+  .band[data-layout="divided"] .stat + .stat { border-top: 1px solid var(--sb-border); }
+}
+
+/* First paint under reduced motion: everything already drawn. */
+@media (prefers-reduced-motion: reduce) {
+  .line { stroke-dashoffset: 0; transition: none; }
+  .area, .land, .lit, .endDot { opacity: 1; transform: none; transition: none; }
+  .bar { transform: none; transition: none; }
+}
