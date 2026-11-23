@@ -94,11 +94,6 @@ export default function Community() {
         <Reveal>
           <h2 id="final-title" className="h2">Be part of the next evolution of <em>digital connectivity.</em></h2>
           <p className="sub">Explore the ecosystem. Discover the technology. Join the community.</p>
-          <div className="row">
-            <a href="#ecosystem" className="btn magnetic">Explore the Ecosystem <ArrowRight size={16} aria-hidden="true" /></a>
-            <a href="#blockchain" className="btn btn--ghost magnetic">Discover the Technology</a>
-            <a href="#channels" className="btn btn--ghost magnetic">Join the Community</a>
-          </div>
         </Reveal>
       </section>
 
@@ -107,7 +102,11 @@ export default function Community() {
       <footer className="footer">
         <div className="footer-top">
           <div>
-            <div className="footer-brand">X6</div>
+            <div className="footer-brand">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/x6-logo-depth-128.png" alt="" width={32} height={32} />
+              X6
+            </div>
             <p className="footer-tag">The Nexus Point of Cryptocurrency, Artificial Intelligence and Global Connectivity.</p>
           </div>
           <div>

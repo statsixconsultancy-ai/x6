@@ -15,6 +15,11 @@ export const site = {
     "A connected cryptocurrency ecosystem where blockchain infrastructure, intelligent technology and global digital participation converge.",
 };
 
+export const social = {
+  /** "Follow the launch" button target. Change it here only. */
+  instagram: "https://www.instagram.com/stat6ai",
+};
+
 export const token = {
   name: "X6 Coins" as string | null,
   ticker: null as string | null,

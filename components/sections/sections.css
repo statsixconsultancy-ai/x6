@@ -1538,3 +1538,26 @@ a.path:hover { transform: translateY(-4px); border-color: var(--ink); }
 .eyebrow { margin-bottom: 14px; }
 .pb-list { margin-top: clamp(24px, 3vw, 40px); }
 .sec > .fc, .global-chart > .fc, .br { margin-top: 24px; }
+
+/* verify card: mobile layout */
+@media (max-width: 860px) {
+  .verify { gap: 22px; padding: 22px 18px; border-radius: 20px; }
+  .verify > div, .verify form { min-width: 0; }
+  .verify .h3 { font-size: 22px; }
+  .verify p { font-size: 15px; margin-top: 10px; }
+}
+@media (max-width: 520px) {
+  .verify .field { flex-direction: column; }
+  .verify input { flex: none; width: 100%; font-size: 16px; }
+  .verify .btn--hot { width: 100%; justify-content: center; }
+  .verify-out { font-size: 14px; overflow-wrap: anywhere; }
+}
+
+/* footer: --pad-x was only defined on .sec, so the footer had no side padding */
+.footer { --pad-x: 8.9vw; padding-left: var(--pad-x); padding-right: var(--pad-x); box-sizing: border-box; overflow: hidden; }
+.footer-top > *, .footer .risk, .footer p { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 1100px) { .footer { --pad-x: 22px; padding-top: 56px; } }
+
+.footer-brand img { width: 32px; height: 32px; object-fit: contain; flex: none; }
+.footer-brand img { width: 40px; height: 40px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); }
+.footer-brand img { width: 46px; height: 46px; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45)); }

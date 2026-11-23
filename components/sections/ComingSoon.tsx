@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { ArrowRight, ShieldCheck } from "lucide-react";
-import { token } from "@/lib/site";
+import { social, token } from "@/lib/site";
 
 /** Cinematic launch teaser: aurora light, a floating coin, and a frosted-glass title card. */
 export default function ComingSoon() {
@@ -51,8 +51,7 @@ export default function ComingSoon() {
         </h2>
         <p className="cs-copy">The native currency of the X6 ecosystem is almost here. The official contract address will be announced on this website first. Until then, any token sold as {name} is not ours.</p>
         <div className="cs-actions">
-          <a href="#roadmap" className="cs-btn cs-btn--solid">Follow the launch <ArrowRight size={16} aria-hidden="true" /></a>
-          <a href="#security" className="cs-btn"><ShieldCheck size={16} aria-hidden="true" /> How to verify the contract</a>
+          <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="cs-btn cs-btn--solid">Follow the launch <ArrowRight size={16} aria-hidden="true" /></a>
         </div>
       </div>
     </section>

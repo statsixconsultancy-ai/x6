@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowDown, Coins, Menu, MessagesSquare, Sparkles, Globe2, X } from "lucide-react";
-import { navLinks, site, token } from "@/lib/site";
+import { navLinks, site, social, token } from "@/lib/site";
 import { useMagnetic } from "@/components/useMagnetic";
 import "./hero.css";
 
@@ -46,7 +46,6 @@ export default function Hero() {
   const iconRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const ctaRef = useMagnetic<HTMLAnchorElement>(0.22);
-  const cta2Ref = useMagnetic<HTMLAnchorElement>(0.22);
   const heroRef = useRef<HTMLElement>(null);
   const coinRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -172,6 +171,8 @@ export default function Hero() {
 
         <nav className="hero-nav" aria-label="Primary">
           <a href="#top" className="hero-logo" aria-label={`${site.name} home`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/x6-logo-depth-128.png" alt="" width={44} height={44} className="hero-logo-img" />
             {site.name}
           </a>
           <div className="hero-links">
@@ -179,7 +180,6 @@ export default function Hero() {
               <a key={l.href} href={l.href}>{l.label}</a>
             ))}
           </div>
-          <a href="#community" className="hero-join magnetic">Join the Community</a>
           <button type="button" className="hero-burger icon-btn" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
             <Menu size={20} />
           </button>
@@ -206,11 +206,8 @@ export default function Hero() {
         </div>
 
         <div className="hero-row">
-          <a ref={ctaRef} href="#ecosystem" className="hero-btn magnetic">
-            Explore the Ecosystem <ArrowRight aria-hidden="true" />
-          </a>
-          <a ref={cta2Ref} href="#token" className="hero-btn magnetic">
-            Discover the Token
+          <a ref={ctaRef} href={social.instagram} target="_blank" rel="noopener noreferrer" className="hero-btn magnetic">
+            Follow the launch <ArrowRight aria-hidden="true" />
           </a>
           <p className="hero-caption">
             A connected cryptocurrency ecosystem where blockchain infrastructure,
@@ -262,7 +259,6 @@ export default function Hero() {
           {navLinks.map((l) => (
             <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}>{l.label}</a>
           ))}
-          <a href="#community" onClick={() => setMenuOpen(false)} style={{ borderBottom: 0, marginTop: 12, textDecoration: "underline" }}>Join the Community →</a>
         </div>
       )}
     </section>

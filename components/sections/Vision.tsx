@@ -107,10 +107,6 @@ export default function Vision() {
         </p>
       </div>
 
-      <div className="vactions">
-        <a href="#token" className="btn magnetic">Discover the token <ArrowRight size={16} aria-hidden="true" /></a>
-        <a href="#roadmap" className="btn btn--ghost magnetic">See the roadmap</a>
-      </div>
 
       <ul className="vprin" aria-label="What X6 Coins stands for">
         {PRINCIPLES.map((p, i) => (

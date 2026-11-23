@@ -303,9 +303,6 @@ export default function Intelligence() {
             ecosystem and turns raw blockchain activity into structured signals: analytics you can understand,
             risks you can see before you sign, and automations builders can rely on.
           </p>
-          <a href="#ecosystem" className="intel-btn magnetic">
-            Explore the Ecosystem <ArrowRight size={16} aria-hidden="true" />
-          </a>
         </div>
       </div>
 

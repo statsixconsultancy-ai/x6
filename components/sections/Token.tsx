@@ -43,10 +43,6 @@ export default function Token() {
           <Reveal className="warn">
             <b>Protect yourself.</b> X6 Coins has not launched. Only trust a contract address announced through official X6 channels. Any token sold as X6 Coins before then is not ours. We will never DM you first, ask for your seed phrase, or promise returns.
           </Reveal>
-          <div className="row" style={{ marginTop: 28 }}>
-            <a href="#utility" className="btn magnetic">See token utility <ArrowRight size={16} aria-hidden="true" /></a>
-            <a href="#security" className="btn btn--ghost magnetic">How to verify the contract</a>
-          </div>
         </div>
       </div>
     </section>

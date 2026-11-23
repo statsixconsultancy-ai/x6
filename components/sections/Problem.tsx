@@ -71,7 +71,6 @@ export default function Problem() {
 
       <div className="pb-foot">
         <p>One idea answers all of them: a currency people can understand, verify and use.</p>
-        <a href="#solution" className="btn magnetic">See our solution <ArrowRight size={16} aria-hidden="true" /></a>
       </div>
     </section>
   );
