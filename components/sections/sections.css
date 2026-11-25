@@ -1576,3 +1576,4 @@ a.path:hover { transform: translateY(-4px); border-color: var(--ink); }
 .vision .vprin b { color: #12110f; }
 .vision .vprin span:last-child { color: #34332e; }
 .vision .eyebrow { color: #2b2a26; }
+.footer-brand img { width: 56px; height: 56px; }

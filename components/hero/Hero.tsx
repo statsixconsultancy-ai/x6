@@ -79,8 +79,8 @@ export default function Hero() {
     let raf = 0;
     const frame = () => {
       raf = requestAnimationFrame(frame);
-      const T = reduced ? 800 : (Number(clock.currentTime) || 0);
-      const idx = Math.floor(T / SLOT) % 4;
+      const T = reduced ? 800 : Math.max(0, Number(clock.currentTime) || 0);
+      const idx = ((Math.floor(T / SLOT) % 4) + 4) % 4;
       const tl = T % SLOT;
 
       /* ---------- words + icons ---------- */
@@ -128,7 +128,7 @@ export default function Hero() {
       ctaRef.current?.classList.toggle("is-lit", lit && !reduced);
 
       /* ---------- ambient colour + coin parallax ---------- */
-      const ca = WORDS[cur].rgb, cb = WORDS[nxt].rgb;
+      const ca = (WORDS[cur] ?? WORDS[0]).rgb, cb = (WORDS[nxt] ?? WORDS[0]).rgb;
       const col = [0, 1, 2].map((k) => Math.round(ca[k] + (cb[k] - ca[k]) * s));
       hero.style.setProperty("--amb", `${col[0]}, ${col[1]}, ${col[2]}`);
       cmx += (mx - cmx) * 0.06; cmy += (my - cmy) * 0.06;
@@ -173,7 +173,6 @@ export default function Hero() {
           <a href="#top" className="hero-logo" aria-label={`${site.name} home`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/x6-logo-orange-128.png" alt="" width={44} height={44} className="hero-logo-img" />
-            {site.name}
           </a>
           <div className="hero-links">
             {navLinks.map((l) => (
