@@ -85,6 +85,18 @@ export default function Vision() {
 
   return (
     <section id="vision" className="sec sec--cream vision" aria-labelledby="vision-title">
+      <div className="vision-video" aria-hidden="true">
+        <video
+          ref={(v) => { if (v && window.matchMedia("(prefers-reduced-motion: reduce)").matches) v.pause(); }}
+          src="/videos/currencies.mp4"
+          poster="/videos/currencies-poster.jpg"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      </div>
       <div className="vision-eyebrow"><Eyebrow n="02">The Vision</Eyebrow></div>
       <h2 id="vision-title" className="sr-only">Reimagining digital currency</h2>
 

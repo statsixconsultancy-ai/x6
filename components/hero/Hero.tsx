@@ -172,7 +172,7 @@ export default function Hero() {
         <nav className="hero-nav" aria-label="Primary">
           <a href="#top" className="hero-logo" aria-label={`${site.name} home`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/x6-logo-depth-128.png" alt="" width={44} height={44} className="hero-logo-img" />
+            <img src="/x6-logo-orange-128.png" alt="" width={44} height={44} className="hero-logo-img" />
             {site.name}
           </a>
           <div className="hero-links">

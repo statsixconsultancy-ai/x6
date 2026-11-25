@@ -104,7 +104,7 @@ export default function Community() {
           <div>
             <div className="footer-brand">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/x6-logo-depth-128.png" alt="" width={32} height={32} />
+              <img src="/x6-logo-orange-128.png" alt="" width={32} height={32} />
               X6
             </div>
             <p className="footer-tag">The Nexus Point of Cryptocurrency, Artificial Intelligence and Global Connectivity.</p>
